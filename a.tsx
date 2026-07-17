@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
     Activity, Brain, Flame, Heart, Moon, Compass, Calendar,
     Settings, Sparkles, Sliders, Battery, User, Search, Bell,
     ChevronRight, CheckCircle, RefreshCw, Play, BookOpen, Send,
-    Mic, Image as ImageIcon, Link2, LogIn, Sun, Moon as MoonIcon
+    Mic, Image as ImageIcon, Link2, LogIn, Sun, Moon as MoonIcon, Menu
 } from 'lucide-react';
 
 const ThemeCtx = React.createContext<any>({});
@@ -22,6 +22,7 @@ export default function AuraTwin() {
         { id: 3, text: "AuraTwin predicts 12% lower energy if sleep drops.", type: 'info' }
     ]);
     const [showN, setShowN] = useState(false);
+    const [navOpen, setNavOpen] = useState(false);
     const [chat, setChat] = useState(false);
     const [logged, setLogged] = useState(true);
     const [sliders, setSliders] = useState({ sleep: 8.2, exercise: 45, water: 2.2, calories: 2200, stress: 3 });
@@ -86,6 +87,28 @@ export default function AuraTwin() {
                     animation: shimmerSweep 0.65s ease forwards;
                   }
 
+                  /* ---------- responsive layout ---------- */
+                  .aw-main-pad { padding: 40px; }
+                  .aw-burger { display: none !important; }
+                  @media (max-width: 1100px) {
+                    .g-cards-6 { grid-template-columns: repeat(3, 1fr) !important; }
+                  }
+                  @media (max-width: 900px) {
+                    .aw-desktop-side { display: none !important; }
+                    .aw-burger { display: flex !important; }
+                    .aw-hide-md { display: none !important; }
+                    .aw-main-pad { padding: 24px 16px; }
+                    .aw-app-header { padding: 12px 16px !important; gap: 10px; }
+                    .g-stack-md { grid-template-columns: 1fr !important; }
+                    .g-4col { grid-template-columns: repeat(2, 1fr) !important; }
+                    .g-zones { grid-template-columns: 1fr !important; }
+                  }
+                  @media (max-width: 560px) {
+                    .aw-hide-sm { display: none !important; }
+                    .g-cards-6 { grid-template-columns: repeat(2, 1fr) !important; }
+                    .g-stack-sm { grid-template-columns: 1fr !important; }
+                  }
+
                   @media (prefers-reduced-motion: reduce) {
                     * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
                   }
@@ -99,7 +122,19 @@ export default function AuraTwin() {
                     {!logged ? <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}><AuthScreen onLogin={() => setLogged(true)} /></motion.div> :
                         tab === 'landing' ? <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.4 }}><LandingPage onEnter={() => setTab('dashboard')} /></motion.div> : (
                             <motion.div key="app" initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
-                                <Sidebar active={tab} setActive={setTab} onLogout={() => setLogged(false)} />
+                                <div className="aw-desktop-side" style={{ display: 'flex' }}>
+                                    <Sidebar active={tab} setActive={setTab} onLogout={() => setLogged(false)} />
+                                </div>
+                                <AnimatePresence>
+                                    {navOpen && (
+                                        <>
+                                            <motion.div key="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNavOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 90 }} />
+                                            <motion.div key="drawer" initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ type: 'spring', stiffness: 340, damping: 34 }} style={{ position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 91, display: 'flex' }}>
+                                                <Sidebar active={tab} setActive={(t: any) => { setTab(t); setNavOpen(false); }} onLogout={() => { setLogged(false); setNavOpen(false); }} />
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
                                 <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
                                     {/* Ambient gradient orbs */}
                                     <div aria-hidden="true" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
@@ -107,10 +142,13 @@ export default function AuraTwin() {
                                         <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.045) 0%, transparent 70%)', top: '40%', right: '-10%', animation: 'orbFloat2 28s ease-in-out infinite' }} />
                                         <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,146,60,0.035) 0%, transparent 70%)', bottom: '5%', left: '15%', animation: 'orbFloat3 18s ease-in-out infinite' }} />
                                     </div>
-                                    <header style={{ position: 'sticky', top: 0, zIndex: 30, background: F.header, backdropFilter: 'blur(20px)', borderBottom: `1px solid ${F.b}`, padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <header className="aw-app-header" style={{ position: 'sticky', top: 0, zIndex: 30, background: F.header, backdropFilter: 'blur(20px)', borderBottom: `1px solid ${F.b}`, padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            <span style={{ fontSize: 11, fontWeight: 600, color: F.t2, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Environment</span>
-                                            <span style={{ fontSize: 11, fontWeight: 600, color: F.ac, letterSpacing: '0.04em' }}>Staging</span>
+                                            <button className="aw-burger" onClick={() => setNavOpen(true)} aria-label="Open navigation" style={{ background: 'none', border: `1px solid ${F.b}`, borderRadius: 10, padding: 8, cursor: 'pointer', color: F.t1, alignItems: 'center', justifyContent: 'center' }}>
+                                                <Menu size={16} />
+                                            </button>
+                                            <span className="aw-hide-sm" style={{ fontSize: 11, fontWeight: 600, color: F.t2, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Environment</span>
+                                            <span className="aw-hide-sm" style={{ fontSize: 11, fontWeight: 600, color: F.ac, letterSpacing: '0.04em' }}>Staging</span>
                                             <button onClick={() => setTab('landing')} style={{ fontSize: 11, color: F.t2, background: 'none', border: `1px solid ${F.b}`, borderRadius: 20, padding: '4px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
                                                 <Compass size={10} /> Landing
                                             </button>
@@ -120,8 +158,8 @@ export default function AuraTwin() {
 
                                             <button onClick={() => setCmdOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: F.s2, border: `1px solid ${F.b}`, borderRadius: 20, padding: '6px 16px', fontSize: 12, color: F.t2, cursor: 'pointer' }}>
                                                 <Search size={13} />
-                                                <span>Search...</span>
-                                                <span style={{ fontSize: 10, padding: '2px 6px', background: F.b, borderRadius: 6, marginLeft: 10 }}>⌘K</span>
+                                                <span className="aw-hide-md">Search...</span>
+                                                <span className="aw-hide-md" style={{ fontSize: 10, padding: '2px 6px', background: F.b, borderRadius: 6, marginLeft: 10 }}>⌘K</span>
                                             </button>
 
                                             <div style={{ position: 'relative' }}>
@@ -130,7 +168,7 @@ export default function AuraTwin() {
                                                     <span style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', background: F.ac }} />
                                                 </button>
                                                 {showN && (
-                                                    <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 8, width: 320, background: F.s1, border: `1px solid ${F.b}`, borderRadius: 16, padding: 16, zIndex: 50 }}>
+                                                    <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 8, width: 'min(320px, calc(100vw - 32px))', background: F.s1, border: `1px solid ${F.b}`, borderRadius: 16, padding: 16, zIndex: 50 }}>
                                                         <p style={{ fontSize: 10, fontWeight: 600, color: F.t2, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Notifications</p>
                                                         {notifs.map(n => <div key={n.id} style={{ fontSize: 12, color: F.t2, padding: '8px 0', borderBottom: `1px solid ${F.b}` }}>{n.text}</div>)}
                                                     </div>
@@ -140,7 +178,7 @@ export default function AuraTwin() {
                                                 <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden' }}>
                                                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 </div>
-                                                <div>
+                                                <div className="aw-hide-sm">
                                                     <p style={{ fontSize: 12, fontWeight: 600, color: F.t1, margin: 0 }}>Alex Vance</p>
                                                     <p style={{ fontSize: 10, color: F.t2, margin: 0 }}>Premium Pioneer</p>
                                                 </div>
@@ -155,7 +193,8 @@ export default function AuraTwin() {
                                                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                                                 exit={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
                                                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                                                style={{ padding: '40px 40px', position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto' }}
+                                                className="aw-main-pad"
+                                                style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto' }}
                                             >
                                                 {tab === 'dashboard' && <DashboardHome sliders={sliders} setSliders={setSliders} />}
                                                 {tab === 'twin' && <WellnessTwinView sliders={sliders} setSliders={setSliders} />}
@@ -322,9 +361,30 @@ function FeatureShowcase() {
     ];
 
     const feat = features[idx];
+    const [tilt, setTilt] = React.useState({ rx: 0, ry: 0 });
+    const onTilt = (e: React.MouseEvent<HTMLDivElement>) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        setTilt({ rx: (0.5 - py) * 10, ry: (px - 0.5) * 10 });
+    };
     return (
-        <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }} style={{ animation: 'float 5s ease-in-out infinite' }}>
-            <div style={{ background: F.cardGrad, border: `1px solid ${F.b}`, borderRadius: 24, padding: 28, boxShadow: `0 40px 100px rgba(0,0,0,0.35), 0 0 60px ${feat.color}15`, minHeight: 360, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }} style={{ animation: 'float 5s ease-in-out infinite', position: 'relative', perspective: 1100 }}>
+            {/* floating biometric chips */}
+            <motion.div className="aw-hide-md" animate={{ y: [-7, 8, -7], rotate: [-2, 2, -2] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: -20, right: -16, zIndex: 3, display: 'flex', alignItems: 'center', gap: 7, background: F.cardGrad, border: `1px solid #ff6b6b50`, borderRadius: 14, padding: '9px 14px', fontSize: 11, fontWeight: 700, color: '#ff6b6b', boxShadow: '0 12px 32px rgba(0,0,0,0.35), 0 0 24px #ff6b6b20', backdropFilter: 'blur(10px)' }}>
+                <motion.span animate={{ scale: [1, 1.35, 1] }} transition={{ duration: 0.9, repeat: Infinity }} style={{ display: 'flex' }}><Heart size={13} fill="#ff6b6b" /></motion.span> 58 bpm
+            </motion.div>
+            <motion.div className="aw-hide-md" animate={{ y: [8, -8, 8], rotate: [2, -2, 2] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }} style={{ position: 'absolute', bottom: -18, left: -20, zIndex: 3, display: 'flex', alignItems: 'center', gap: 7, background: F.cardGrad, border: `1px solid #60a5fa50`, borderRadius: 14, padding: '9px 14px', fontSize: 11, fontWeight: 700, color: '#60a5fa', boxShadow: '0 12px 32px rgba(0,0,0,0.35), 0 0 24px #60a5fa20', backdropFilter: 'blur(10px)' }}>
+                <Moon size={13} /> Sleep 92
+            </motion.div>
+            <motion.div className="aw-hide-md" animate={{ y: [-6, 6, -6] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 2 }} style={{ position: 'absolute', top: '42%', left: -30, zIndex: 3, display: 'flex', alignItems: 'center', gap: 7, background: F.cardGrad, border: `1px solid ${F.ac}50`, borderRadius: 14, padding: '9px 14px', fontSize: 11, fontWeight: 700, color: F.ac, boxShadow: `0 12px 32px rgba(0,0,0,0.35), 0 0 24px ${F.ac}20`, backdropFilter: 'blur(10px)' }}>
+                <Activity size={13} /> HRV 84ms
+            </motion.div>
+            <motion.div
+                onMouseMove={onTilt}
+                onMouseLeave={() => setTilt({ rx: 0, ry: 0 })}
+                animate={{ rotateX: tilt.rx, rotateY: tilt.ry }}
+                transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+                style={{ background: F.cardGrad, border: `1px solid ${F.b}`, borderRadius: 24, padding: 28, boxShadow: `0 40px 100px rgba(0,0,0,0.35), 0 0 60px ${feat.color}15`, minHeight: 360, display: 'flex', flexDirection: 'column', gap: 20, transformStyle: 'preserve-3d', willChange: 'transform' }}>
                 {/* progress pills */}
                 <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                     {features.map((_, i) => (
@@ -356,8 +416,56 @@ function FeatureShowcase() {
                     <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ color: feat.color, fontSize: 14 }}>→</motion.span>
                     Connect your devices to get started — free
                 </div>
-            </div>
+            </motion.div>
         </motion.div>
+    );
+}
+
+function CountUp({ to, suffix = '', decimals = 0, style: s }: { to: number; suffix?: string; decimals?: number; style?: React.CSSProperties }) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const inView = useInView(ref, { once: true, margin: '-40px' });
+    const [val, setVal] = useState(0);
+    useEffect(() => {
+        if (!inView) return;
+        const t0 = performance.now(); const dur = 1600;
+        let id: number;
+        const step = (t: number) => {
+            const p = Math.min(1, (t - t0) / dur);
+            const e = 1 - Math.pow(1 - p, 3);
+            setVal(to * e);
+            if (p < 1) id = requestAnimationFrame(step);
+        };
+        id = requestAnimationFrame(step);
+        return () => cancelAnimationFrame(id);
+    }, [inView, to]);
+    return <span ref={ref} style={{ fontVariantNumeric: 'tabular-nums', ...s }}>{val.toFixed(decimals)}{suffix}</span>;
+}
+
+function Typewriter({ words, accent }: { words: string[]; accent: string }) {
+    const [wi, setWi] = useState(0);
+    const [len, setLen] = useState(0);
+    const [del, setDel] = useState(false);
+    useEffect(() => {
+        const word = words[wi];
+        let delay = del ? 40 : 90;
+        if (!del && len === word.length) delay = 1600;
+        if (del && len === 0) delay = 350;
+        const t = setTimeout(() => {
+            if (!del) {
+                if (len === word.length) setDel(true);
+                else setLen(len + 1);
+            } else {
+                if (len === 0) { setDel(false); setWi((wi + 1) % words.length); }
+                else setLen(len - 1);
+            }
+        }, delay);
+        return () => clearTimeout(t);
+    }, [len, del, wi, words]);
+    return (
+        <span style={{ backgroundImage: `linear-gradient(100deg, ${accent} 20%, #5eead4 45%, ${accent} 70%, #5eead4 95%)`, backgroundSize: '250% auto', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', animation: 'gradientShift 5s ease infinite', filter: `drop-shadow(0 0 26px ${accent}30)` }}>
+            {words[wi].slice(0, len) || ' '}
+            <span style={{ display: 'inline-block', width: '0.07em', height: '0.85em', background: accent, marginLeft: 5, verticalAlign: '-0.05em', animation: 'blinkCaret 1s steps(2) infinite' }} />
+        </span>
     );
 }
 
@@ -367,11 +475,13 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
     const [mag, setMag] = React.useState({ x: 0, y: 0 });
     const [spot, setSpot] = React.useState({ x: 50, y: 40 });
     const [scrollPct, setScrollPct] = React.useState(0);
+    const [sy, setSy] = React.useState(0);
     const rootRef = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         const onScroll = () => {
             const h = document.documentElement.scrollHeight - window.innerHeight;
             setScrollPct(h > 0 ? Math.min(100, (window.scrollY / h) * 100) : 0);
+            setSy(window.scrollY);
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
@@ -387,15 +497,51 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
         { icon: Link2, title: 'Wearable Fusion', desc: 'Oura, WHOOP, Garmin, and Apple Health in one layer.' },
     ];
     return (
-        <div ref={rootRef} onMouseMove={(e) => { const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect(); setSpot({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }} style={{ minHeight: '100vh', background: F.bg, overflow: 'hidden', position: 'relative', color: F.t1 }}>
-            <style>{`@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}} @keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}} @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}} @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}} @keyframes shine{0%{background-position:-200% center}100%{background-position:200% center}} @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}} @keyframes grainShift{0%,100%{transform:translate(0,0)}10%{transform:translate(-1%,-2%)}30%{transform:translate(2%,1%)}50%{transform:translate(-1%,2%)}70%{transform:translate(1%,-1%)}90%{transform:translate(-2%,1%)}} @media (prefers-reduced-motion: reduce){*{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important}}`}</style>
+        <div ref={rootRef} onMouseMove={(e) => { const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect(); setSpot({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }} style={{ minHeight: '100vh', background: F.bg, overflowX: 'clip', position: 'relative', color: F.t1 }}>
+            <style>{`
+              @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+              @keyframes marqueeRev{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+              @keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+              @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+              @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+              @keyframes shine{0%{background-position:-200% center}100%{background-position:200% center}}
+              @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+              @keyframes grainShift{0%,100%{transform:translate(0,0)}10%{transform:translate(-1%,-2%)}30%{transform:translate(2%,1%)}50%{transform:translate(-1%,2%)}70%{transform:translate(1%,-1%)}90%{transform:translate(-2%,1%)}}
+              @keyframes blinkCaret{0%,100%{opacity:1}50%{opacity:0}}
+              @keyframes gridPan{from{background-position:0 0}to{background-position:54px 54px}}
+              @keyframes meteorFall{0%{transform:translate(0,0) rotate(-35deg);opacity:0}8%{opacity:1}70%{opacity:1}100%{transform:translate(-70vw,48vw) rotate(-35deg);opacity:0}}
+              @keyframes orbitSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+              .land-grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(${F.ac}0e 1px,transparent 1px),linear-gradient(90deg,${F.ac}0e 1px,transparent 1px);background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 40%,transparent 78%);mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 40%,transparent 78%);animation:gridPan 26s linear infinite}
+              .meteor{position:fixed;z-index:0;pointer-events:none;width:3px;height:3px;border-radius:50%;background:#5eead4;box-shadow:0 0 8px 1px ${F.ac}90;animation:meteorFall linear infinite}
+              .meteor::before{content:'';position:absolute;top:50%;left:2px;transform:translateY(-50%);width:110px;height:1px;background:linear-gradient(90deg,#5eead4cc,transparent)}
+              .land-header{padding:16px 48px}
+              .land-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:100px 80px 90px;min-height:88vh}
+              .land-sec{padding:90px 80px}
+              .land-feats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+              .land-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;position:relative}
+              .land-band{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+              .land-foot{padding:24px 80px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+              .land-h1{font-size:clamp(40px,7.2vw,72px);font-weight:800;letter-spacing:-0.05em;line-height:1.05;margin:0}
+              .land-h2{font-size:clamp(32px,5.5vw,50px);font-weight:800;letter-spacing:-0.04em;line-height:1.1;margin:0}
+              @media (max-width:1024px){.land-hero{grid-template-columns:1fr;padding:72px 32px 64px;gap:44px;min-height:auto}.land-sec{padding:72px 32px}}
+              @media (max-width:768px){.land-feats,.land-steps{grid-template-columns:1fr}.land-band{grid-template-columns:repeat(2,1fr)}.land-header{padding:12px 16px}.land-hero{padding:56px 18px 48px}.land-sec{padding:56px 18px}.land-foot{padding:20px 18px}}
+              @media (prefers-reduced-motion: reduce){*{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important}}
+            `}</style>
             <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.035, mixBlendMode: 'overlay', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%272%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E")', backgroundSize: '120px 120px', animation: 'grainShift 1.2s steps(4) infinite' }} />
+            {/* aurora ribbon */}
+            <div aria-hidden style={{ position: 'fixed', inset: '-20% -10%', zIndex: 0, pointerEvents: 'none', opacity: 0.55, background: `linear-gradient(115deg, transparent 28%, ${F.ac}14 42%, #60a5fa10 52%, #a78bfa12 62%, transparent 80%)`, backgroundSize: '220% 220%', animation: 'gradientShift 16s ease infinite', filter: 'blur(34px)' }} />
+            {/* animated grid floor */}
+            <div aria-hidden className="land-grid-bg" />
+            {/* meteors */}
+            {[0, 1, 2, 3, 4, 5].map(i => (
+                <span key={i} aria-hidden className="meteor" style={{ top: `${4 + i * 11}%`, left: `${28 + (i * 13) % 65}%`, animationDelay: `${i * 2.7}s`, animationDuration: `${5.5 + (i % 3) * 2}s` }} />
+            ))}
             {/* scroll progress bar */}
             <div style={{ position: 'fixed', top: 0, left: 0, height: 3, width: `${scrollPct}%`, background: `linear-gradient(90deg,${F.ac},#60a5fa)`, zIndex: 100, transition: 'width 0.1s linear', boxShadow: `0 0 12px ${F.ac}80` }} />
             {/* cursor spotlight */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(600px circle at ${spot.x}% ${spot.y}%, ${F.ac}0d, transparent 40%)`, transition: 'background 0.15s ease-out' }} />
-            {/* particles */}
-            <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+            {/* particles — parallax layer */}
+            <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden', transform: `translateY(${sy * -0.08}px)`, willChange: 'transform' }}>
                 {particles.map(p => (
                     <motion.div key={p.id} style={{ position: 'absolute', left: `${p.left}%`, top: `${p.top}%`, width: p.size, height: p.size, borderRadius: '50%', background: F.ac, opacity: p.op }}
                         animate={{ y: [-15, 15, -15], x: [-8, 8, -8], opacity: [p.op, p.op * 2.5, p.op] }}
@@ -407,37 +553,46 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                 <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '30%', right: '20%', width: 200, height: 200, borderRadius: '50%', background: `radial-gradient(circle,${F.ac}20,transparent 70%)`, filter: 'blur(40px)' }} />
             </div>
             {/* header */}
-            <header style={{ padding: '16px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(24px)', background: F.header, borderBottom: `1px solid ${F.b}`, position: 'sticky', top: 0, zIndex: 10 }}>
+            <header className="land-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backdropFilter: 'blur(24px)', background: F.header, borderBottom: `1px solid ${F.b}`, position: 'sticky', top: 0, zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <motion.div animate={{ boxShadow: [`0 0 10px ${F.ac}60`, `0 0 20px ${F.ac}90`, `0 0 10px ${F.ac}60`] }} transition={{ duration: 2.5, repeat: Infinity }} style={{ width: 28, height: 28, borderRadius: 8, background: F.ac, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: F.bg, fontSize: 14 }}>A</motion.div>
                     <span style={{ fontWeight: 700, fontSize: 15, color: F.t1, letterSpacing: '-0.02em' }}>AuraTwin</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 11, color: F.t3, fontWeight: 500 }}>Adaptive Engine v4.2</span>
+                    <span className="aw-hide-sm" style={{ fontSize: 11, color: F.t3, fontWeight: 500 }}>Adaptive Engine v4.2</span>
                     <motion.button onClick={onEnter} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }} style={{ padding: '8px 22px', borderRadius: 20, background: F.ac, color: F.bg, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', boxShadow: `0 4px 16px ${F.ac}40` }}>Enter Workspace</motion.button>
                 </div>
             </header>
             {/* hero split */}
-            <section style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', padding: '100px 80px', minHeight: '88vh' }}>
+            <section className="land-hero" style={{ position: 'relative', zIndex: 1 }}>
                 {/* left */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: `1px solid ${F.b}`, borderRadius: 20, padding: '6px 18px', fontSize: 11, color: F.ac, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, background: F.acDim, width: 'fit-content' }}>
                         <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ width: 6, height: 6, borderRadius: '50%', background: F.ac, display: 'inline-block' }} />
                         Live · AI Digital Twin
                     </motion.div>
-                    <div style={{ lineHeight: 1.06 }}>
-                        {(['Your health,', 'intelligently', 'understood.'] as const).map((line, li) => (
-                            <div key={li} style={{ overflow: 'hidden' }}>
-                                <motion.div initial={{ y: '110%' }} animate={{ y: 0 }} transition={{ duration: 0.75, delay: 0.2 + li * 0.12, ease: [0.22, 1, 0.36, 1] }}>
-                                    <span style={li === 1 ? { fontSize: 72, fontWeight: 800, letterSpacing: '-0.05em', display: 'block', backgroundImage: `linear-gradient(100deg, ${F.ac} 20%, #5eead4 40%, ${F.ac} 60%, #5eead4 80%)`, backgroundSize: '300% auto', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', animation: 'gradientShift 6s ease infinite', filter: `drop-shadow(0 0 30px ${F.ac}35)` } : { fontSize: 72, fontWeight: 800, letterSpacing: '-0.05em', color: F.t1, display: 'block' }}>{line}</span>
-                                </motion.div>
-                            </div>
+                    <h1 className="land-h1">
+                        {(['Your health,', 'intelligently'] as const).map((line, li) => (
+                            <span key={li} style={{ display: 'block', overflow: 'hidden', padding: '0.05em 0', perspective: 600 }}>
+                                {line.split('').map((ch, ci) => (
+                                    <motion.span
+                                        key={ci}
+                                        initial={{ opacity: 0, y: '0.9em', rotateX: -75 }}
+                                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                                        transition={{ duration: 0.6, delay: 0.15 + li * 0.32 + ci * 0.028, ease: [0.22, 1, 0.36, 1] }}
+                                        style={{ display: 'inline-block', whiteSpace: 'pre', color: F.t1, transformOrigin: '50% 100%' }}
+                                    >{ch}</motion.span>
+                                ))}
+                            </span>
                         ))}
-                    </div>
+                        <motion.span initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.85 }} style={{ display: 'block' }}>
+                            <Typewriter words={['understood.', 'predicted.', 'optimized.', 'protected.']} accent={F.ac} />
+                        </motion.span>
+                    </h1>
                     <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.65 }} style={{ fontSize: 16, color: F.t2, maxWidth: 440, lineHeight: 1.8, margin: 0, fontWeight: 400 }}>
                         An AI digital twin that predicts your health trajectory and guides you toward optimal living — before issues arise.
                     </motion.p>
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.8 }} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.8 }} style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                         <button onClick={onEnter}
                             onMouseEnter={() => setHov(true)}
                             onMouseMove={(e) => { const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect(); setMag({ x: (e.clientX - r.left - r.width / 2) * 0.3, y: (e.clientY - r.top - r.height / 2) * 0.4 }); }}
@@ -449,17 +604,24 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                             <Play size={12} /> Demo
                         </motion.button>
                     </motion.div>
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} style={{ display: 'flex', gap: 24, paddingTop: 8 }}>
-                        {[{ n: '92%', l: 'Wellness' }, { n: '84ms', l: 'HRV' }, { n: '12%', l: 'Burnout' }, { n: '97', l: 'Recovery' }].map((s, i) => (
-                            <div key={i}>
-                                <p style={{ fontSize: 22, fontWeight: 800, color: F.ac, margin: 0, letterSpacing: '-0.03em' }}>{s.n}</p>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} style={{ display: 'flex', gap: 24, paddingTop: 8, flexWrap: 'wrap' }}>
+                        {[{ n: 92, suffix: '%', l: 'Wellness' }, { n: 84, suffix: 'ms', l: 'HRV' }, { n: 12, suffix: '%', l: 'Burnout' }, { n: 97, suffix: '', l: 'Recovery' }].map((s, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.12 }}>
+                                <p style={{ fontSize: 22, fontWeight: 800, color: F.ac, margin: 0, letterSpacing: '-0.03em' }}><CountUp to={s.n} suffix={s.suffix} /></p>
                                 <p style={{ fontSize: 10, color: F.t3, margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{s.l}</p>
-                            </div>
+                            </motion.div>
                         ))}
                     </motion.div>
                 </div>
                 {/* right — rotating feature showcase */}
                 <FeatureShowcase />
+                {/* scroll cue */}
+                <motion.div className="aw-hide-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }} style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, pointerEvents: 'none' }}>
+                    <div style={{ width: 22, height: 34, borderRadius: 12, border: `1.5px solid ${F.t3}`, display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
+                        <motion.div animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }} style={{ width: 3, height: 7, borderRadius: 2, background: F.ac }} />
+                    </div>
+                    <span style={{ fontSize: 9, letterSpacing: '0.2em', color: F.t3, textTransform: 'uppercase', fontWeight: 700 }}>Scroll</span>
+                </motion.div>
             </section>
             {/* marquee */}
             <div style={{ borderTop: `1px solid ${F.b}`, borderBottom: `1px solid ${F.b}`, padding: '14px 0', overflow: 'hidden', position: 'relative', zIndex: 1, background: F.s1 }}>
@@ -467,14 +629,32 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                     {[marqueeItems, marqueeItems].join('  ·  ')}
                 </div>
             </div>
+            {/* stats band */}
+            <section className="land-sec" style={{ position: 'relative', zIndex: 1, paddingTop: 70, paddingBottom: 70 }}>
+                <div className="land-band" style={{ maxWidth: 1000, margin: '0 auto' }}>
+                    {[
+                        { to: 24, suffix: 'h', l: 'Early burnout warning' },
+                        { to: 50, suffix: 'k+', l: 'Data points modeled daily' },
+                        { to: 5, suffix: '', l: 'Wearables unified' },
+                        { to: 99, suffix: '%', l: 'Sync uptime' },
+                    ].map((s, i) => (
+                        <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.55, delay: i * 0.1 }} style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: 'clamp(34px, 5vw, 48px)', fontWeight: 800, margin: 0, letterSpacing: '-0.04em', backgroundImage: `linear-gradient(120deg, ${F.ac}, #5eead4, #60a5fa)`, backgroundSize: '200% auto', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', animation: 'gradientShift 6s ease infinite' }}>
+                                <CountUp to={s.to} suffix={s.suffix} />
+                            </p>
+                            <p style={{ fontSize: 11, color: F.t3, margin: '6px 0 0', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>{s.l}</p>
+                        </motion.div>
+                    ))}
+                </div>
+            </section>
             {/* features */}
-            <section style={{ padding: '90px 80px', background: F.bg, position: 'relative', zIndex: 1 }}>
+            <section className="land-sec" style={{ background: F.bg, position: 'relative', zIndex: 1 }}>
                 <div style={{ maxWidth: 1000, margin: '0 auto' }}>
                     <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ textAlign: 'center', marginBottom: 60 }}>
                         <p style={{ fontSize: 11, fontWeight: 700, color: F.ac, textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 14 }}>Platform</p>
-                        <h2 style={{ fontSize: 50, fontWeight: 800, letterSpacing: '-0.04em', color: F.t1, margin: 0, lineHeight: 1.1 }}>Ecosystem<br /><span style={{ color: F.ac }}>Architecture</span></h2>
+                        <h2 className="land-h2" style={{ color: F.t1 }}>Ecosystem<br /><span style={{ color: F.ac }}>Architecture</span></h2>
                     </motion.div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+                    <div className="land-feats">
                         {feats.map((f, i) => (
                             <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, delay: i * 0.12 }}
                                 whileHover={{ y: -8, borderColor: F.ac, boxShadow: `0 24px 60px rgba(0,0,0,0.3), 0 0 40px ${F.ac}20` }}
@@ -489,7 +669,81 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                     </div>
                 </div>
             </section>
-            <footer style={{ padding: '24px 80px', borderTop: `1px solid ${F.b}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1, background: F.s1 }}>
+            {/* how it works */}
+            <section className="land-sec" style={{ position: 'relative', zIndex: 1, background: F.s1, borderTop: `1px solid ${F.b}`, borderBottom: `1px solid ${F.b}` }}>
+                <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+                    <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ textAlign: 'center', marginBottom: 64 }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: F.ac, textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 14 }}>Protocol</p>
+                        <h2 className="land-h2" style={{ color: F.t1 }}>Three steps to<br /><span style={{ color: F.ac }}>your twin</span></h2>
+                    </motion.div>
+                    <div className="land-steps">
+                        {/* connecting line */}
+                        <svg className="aw-hide-md" aria-hidden style={{ position: 'absolute', top: 44, left: '16%', width: '68%', height: 4, overflow: 'visible', pointerEvents: 'none' }} viewBox="0 0 100 2" preserveAspectRatio="none">
+                            <motion.line x1="0" y1="1" x2="100" y2="1" stroke={F.ac} strokeWidth="1.5" strokeDasharray="4 3" initial={{ pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 0.5 }} viewport={{ once: true }} transition={{ duration: 1.4, ease: 'easeInOut', delay: 0.3 }} />
+                        </svg>
+                        {[
+                            { n: '01', icon: Link2, t: 'Connect', d: 'Pair Oura, WHOOP, Garmin, or Apple Health in under a minute. Data streams in automatically.' },
+                            { n: '02', icon: Brain, t: 'Model', d: 'Your twin learns HRV, sleep, and stress baselines, building a live physiological mirror of you.' },
+                            { n: '03', icon: Sparkles, t: 'Act', d: 'Get forward-looking guidance — recovery windows, burnout alerts, and what-if simulations.' },
+                        ].map((s, i) => (
+                            <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.55, delay: i * 0.18 }} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                                <motion.div whileHover={{ scale: 1.1, rotate: 6 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }} style={{ width: 88, height: 88, borderRadius: 26, background: F.bg, border: `1px solid ${F.b}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', position: 'relative', boxShadow: `0 0 40px ${F.ac}15` }}>
+                                    <motion.div animate={{ opacity: [0.25, 0.7, 0.25], scale: [1, 1.12, 1] }} transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.6 }} style={{ position: 'absolute', inset: -6, borderRadius: 30, border: `1px solid ${F.ac}55` }} />
+                                    <s.icon size={30} color={F.ac} />
+                                    <span style={{ position: 'absolute', top: -10, right: -10, fontSize: 11, fontWeight: 800, color: F.bg, background: F.ac, borderRadius: 10, padding: '3px 8px', letterSpacing: '0.04em' }}>{s.n}</span>
+                                </motion.div>
+                                <h3 style={{ fontSize: 20, fontWeight: 800, color: F.t1, margin: '0 0 10px', letterSpacing: '-0.02em' }}>{s.t}</h3>
+                                <p style={{ fontSize: 13.5, color: F.t2, lineHeight: 1.75, margin: '0 auto', maxWidth: 280 }}>{s.d}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+            {/* testimonial marquee */}
+            <div style={{ padding: '56px 0', overflow: 'hidden', position: 'relative', zIndex: 1, background: F.bg }}>
+                <div style={{ display: 'flex', gap: 18, width: 'max-content', animation: 'marqueeRev 36s linear infinite' }}>
+                    {[...Array(2)].flatMap((_, dup) => [
+                        { q: 'It flagged my burnout two days before I felt it. Genuinely eerie.', n: 'Maya R.', r: 'Product Lead' },
+                        { q: 'The what-if sliders changed how I plan training weeks entirely.', n: 'Devon K.', r: 'Triathlete' },
+                        { q: 'Finally one place where all five of my wearables actually agree.', n: 'Sana P.', r: 'Cardiology Fellow' },
+                        { q: 'Sleep score up 14% in a month just by following the wind-down cues.', n: 'Leo T.', r: 'Founder' },
+                    ].map((t, i) => (
+                        <div key={`${dup}-${i}`} style={{ width: 320, flexShrink: 0, background: F.s1, border: `1px solid ${F.b}`, borderRadius: 20, padding: '22px 24px' }}>
+                            <div style={{ display: 'flex', gap: 3, marginBottom: 12 }}>
+                                {[...Array(5)].map((_, si) => <Sparkles key={si} size={11} color={F.ac} />)}
+                            </div>
+                            <p style={{ fontSize: 13.5, color: F.t2, lineHeight: 1.7, margin: '0 0 16px', fontStyle: 'italic' }}>"{t.q}"</p>
+                            <p style={{ fontSize: 12, fontWeight: 700, color: F.t1, margin: 0 }}>{t.n} <span style={{ color: F.t3, fontWeight: 500 }}>· {t.r}</span></p>
+                        </div>
+                    )))}
+                </div>
+            </div>
+            {/* final CTA */}
+            <section className="land-sec" style={{ position: 'relative', zIndex: 1, textAlign: 'center', overflow: 'hidden' }}>
+                <motion.div animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0.5, 0.25] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} aria-hidden style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 620, height: 620, borderRadius: '50%', background: `radial-gradient(circle, ${F.ac}18, transparent 65%)`, filter: 'blur(50px)', pointerEvents: 'none' }} />
+                {/* orbit rings */}
+                <div className="aw-hide-md" aria-hidden style={{ position: 'absolute', top: '50%', left: '50%', width: 480, height: 480, marginTop: -240, marginLeft: -240, pointerEvents: 'none' }}>
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px dashed ${F.ac}30`, animation: 'orbitSpin 40s linear infinite' }}>
+                        <span style={{ position: 'absolute', top: -4, left: '50%', width: 8, height: 8, borderRadius: '50%', background: F.ac, boxShadow: `0 0 12px ${F.ac}` }} />
+                    </div>
+                    <div style={{ position: 'absolute', inset: 60, borderRadius: '50%', border: `1px dashed ${F.ac}20`, animation: 'orbitSpin 26s linear infinite reverse' }}>
+                        <span style={{ position: 'absolute', bottom: -3, left: '50%', width: 6, height: 6, borderRadius: '50%', background: '#60a5fa', boxShadow: '0 0 10px #60a5fa' }} />
+                    </div>
+                </div>
+                <div style={{ position: 'relative', maxWidth: 640, margin: '0 auto' }}>
+                    <motion.p initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ fontSize: 11, fontWeight: 700, color: F.ac, textTransform: 'uppercase', letterSpacing: '0.16em', marginBottom: 16 }}>Begin Calibration</motion.p>
+                    <motion.h2 initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }} className="land-h2" style={{ marginBottom: 20, backgroundImage: `linear-gradient(110deg, ${F.t1} 30%, ${F.ac} 50%, ${F.t1} 70%)`, backgroundSize: '250% auto', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', animation: 'gradientShift 7s ease infinite' }}>Meet your digital twin today.</motion.h2>
+                    <motion.p initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }} style={{ fontSize: 15, color: F.t2, lineHeight: 1.8, margin: '0 0 32px' }}>Free to start. Two minutes to connect. A lifetime of knowing your body before it tells you.</motion.p>
+                    <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }} style={{ display: 'inline-block', position: 'relative' }}>
+                        <motion.span aria-hidden animate={{ scale: [1, 1.5], opacity: [0.5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }} style={{ position: 'absolute', inset: 0, borderRadius: 28, border: `2px solid ${F.ac}` }} />
+                        <motion.span aria-hidden animate={{ scale: [1, 1.9], opacity: [0.3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.6 }} style={{ position: 'absolute', inset: 0, borderRadius: 28, border: `1px solid ${F.ac}` }} />
+                        <motion.button onClick={onEnter} whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.95 }} style={{ position: 'relative', padding: '17px 48px', borderRadius: 28, background: `linear-gradient(100deg, ${F.ac} 40%, #5eead4 50%, ${F.ac} 60%)`, backgroundSize: '250% auto', animation: 'shine 5s linear infinite', color: F.bg, fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: `0 12px 44px ${F.ac}45` }}>
+                            Launch Ecosystem <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ display: 'flex' }}><ChevronRight size={16} /></motion.span>
+                        </motion.button>
+                    </motion.div>
+                </div>
+            </section>
+            <footer className="land-foot" style={{ borderTop: `1px solid ${F.b}`, position: 'relative', zIndex: 1, background: F.s1 }}>
                 <span style={{ fontSize: 12, color: F.t3 }}>© 2026 AuraTwin Technologies Inc.</span>
                 <span style={{ fontSize: 12, color: F.ac, fontWeight: 700 }}>All Rights Reserved.</span>
             </footer>
@@ -635,10 +889,10 @@ function DashboardHome(_props: { sliders: any, setSliders: any }) {
     ];
     return (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 32, borderBottom: `1px solid ${F.sbBorder}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, paddingBottom: 32, borderBottom: `1px solid ${F.sbBorder}` }}>
                 <div>
                     <p style={{ fontSize: 11, fontWeight: 600, color: F.ac, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 8px' }}>Dashboard</p>
-                    <h2 style={{ fontSize: 38, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>Good morning, Alex.</h2>
+                    <h2 style={{ fontSize: 'clamp(26px, 5.5vw, 38px)', fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>Good morning, Alex.</h2>
                     <p style={{ fontSize: 14, color: F.t2, margin: 0, fontWeight: 400 }}>Friday, July 17, 2026 · Your nervous system is primed for focus.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(48,209,88,0.07)', border: '1px solid rgba(48,209,88,0.15)', borderRadius: 20, padding: '8px 16px' }}>
@@ -646,7 +900,7 @@ function DashboardHome(_props: { sliders: any, setSliders: any }) {
                     <p style={{ fontSize: 12, color: '#30d158', margin: 0, fontWeight: 500 }}>Wearable Sync Active</p>
                 </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20 }}>
                 <Card glow="rgba(52,211,153,0.12)" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 20, padding: 32 }}>
                     <Label>Aggregate Wellness</Label>
                     <div style={{ position: 'relative', width: 170, height: 170 }}>
@@ -681,7 +935,7 @@ function DashboardHome(_props: { sliders: any, setSliders: any }) {
                         <p style={{ fontSize: 15, color: '#aeaeb2', lineHeight: 1.75, margin: '0 0 24px', fontWeight: 300 }}>
                             Based on HRV drift overnight and consistent REM sleep, <strong style={{ color: F.t1, fontWeight: 600 }}>today is an exceptional recovery window.</strong> Your fatigue score is low — you're safe to engage in intense training.
                         </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div className="g-stack-sm" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                             {['Deep cognitive focus (10–13:00)', 'Aerobic power intervals (30–45 min)', 'Hydration target: 3.0 L', 'Wind-down routine by 21:30'].map((a, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12, color: F.t2, padding: '8px 12px', background: F.acDim, borderRadius: 10 }}>
                                     <CheckCircle size={13} color={F.ac} />{a}
@@ -695,7 +949,7 @@ function DashboardHome(_props: { sliders: any, setSliders: any }) {
                     </div>
                 </Card>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 14 }}>
+            <div className="g-cards-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 14 }}>
                 {cards.map((c, i) => {
                     const colors = ['#ff6b6b', F.ac, '#60a5fa', '#fb923c', '#4ade80', '#f472b6'];
                     const gc = colors[i];
@@ -788,10 +1042,10 @@ function WellnessTwinView({ sliders, setSliders }: { sliders: any, setSliders: a
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>Holographic Simulator</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>Adjust variables to preview your predicted physiological trajectory.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 480, position: 'relative' }}>
                     <div style={{ position: 'absolute', top: 16, left: 16, fontSize: 10, color: F.t2, background: F.s2, border: `1px solid ${F.b}`, borderRadius: 20, padding: '4px 12px', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>Active Spatial View</div>
-                    <canvas ref={canvasRef} style={{ maxWidth: '100%' }} />
+                    <canvas ref={canvasRef} style={{ maxWidth: '100%', height: 'auto' }} />
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: F.t2, fontFamily: 'monospace', padding: '0 8px' }}>
                         <span>AZIMUTH: ROTATING</span><span>84.1 Hz</span>
                     </div>
@@ -851,7 +1105,7 @@ function TimelineView() {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {/* header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 24, borderBottom: `1px solid ${F.b}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 14, paddingBottom: 24, borderBottom: `1px solid ${F.b}` }}>
                 <div>
                     <p style={{ fontSize: 11, fontWeight: 700, color: F.ac, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>Timeline</p>
                     <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 4px', letterSpacing: '-0.03em' }}>Trend Analytics</h2>
@@ -977,7 +1231,7 @@ function MoodView() {
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>Mood & Burnout</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>Biometric and sentiment fusion for psychological balance.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20 }}>
                 <Card glow="#30d15820" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 28 }}>
                     <Label>Burnout Risk Index</Label>
                     <div style={{ position: 'relative', width: 160, height: 160, marginTop: 8 }}>
@@ -1058,7 +1312,7 @@ function JournalView() {
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>AI Journal</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>Write freely. AuraTwin translates thoughts into physiological variables.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 <Card>
                     <textarea value={txt} onChange={e => setTxt(e.target.value)} placeholder="How are you feeling today..." rows={7} style={{ width: '100%', background: 'transparent', border: 'none', resize: 'none', color: F.t1, fontSize: 14, lineHeight: 1.7, outline: 'none', fontFamily: 'inherit', borderBottom: `1px solid ${F.b}`, paddingBottom: 16, marginBottom: 16 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1176,7 +1430,7 @@ function SleepView() {
                 </div>
             </Card>
             {/* Activity metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            <div className="g-4col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
                 {metrics.map((m, i) => (
                     <Card key={i} glow={`${m.c}40`} style={{ padding: '20px 18px', textAlign: 'center' }}>
                         <motion.div animate={{ boxShadow: [`0 0 0px ${m.c}`, `0 0 16px ${m.c}50`, `0 0 0px ${m.c}`] }} transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
@@ -1213,7 +1467,7 @@ function WearablesView() {
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>Integrations</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>Manage sensor data feeding your AuraTwin core.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 {items.map(item => (
                     <Card key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
@@ -1277,7 +1531,7 @@ function ChatDrawer({ onClose }: { onClose: () => void }) {
         }, 900);
     };
     return (
-        <motion.div initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 30, scale: 0.97 }} transition={{ duration: 0.2 }} style={{ position: 'absolute', bottom: 64, right: 0, width: 360, height: 460, background: F.s1, border: `1px solid ${F.b}`, borderRadius: 20, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <motion.div initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 30, scale: 0.97 }} transition={{ duration: 0.2 }} style={{ position: 'absolute', bottom: 64, right: 0, width: 'min(360px, calc(100vw - 44px))', height: 'min(460px, calc(100dvh - 140px))', background: F.s1, border: `1px solid ${F.b}`, borderRadius: 20, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: `1px solid ${F.b}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Sparkles size={14} color={F.ac} />
@@ -1384,7 +1638,7 @@ function CircadianPeaksView() {
                     </div>
                 </div>
             </Card>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+            <div className="g-zones" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
                 {zones.map((z, i) => (
                     <Card key={i} style={{ padding: '20px 24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -1432,7 +1686,7 @@ function StressCascadeView() {
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>Stress Cascade Map</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>How one physiological stressor bleeds into downstream domains. Today's overall risk is <span style={{ color: '#34d399', fontWeight: 600 }}>LOW (14%)</span>.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 {/* Spatial glowing node graph */}
                 <Card glow="#34d39920" style={{ padding: 0, overflow: 'hidden', background: '#000', minHeight: 440 }}>
                     {/* header badge */}
@@ -1546,7 +1800,7 @@ function BiologicalAgeView() {
                 <h2 style={{ fontSize: 28, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.03em' }}>Biological Age</h2>
                 <p style={{ fontSize: 13, color: F.t2, margin: 0 }}>Your body is aging slower than your birth year suggests. Here's what's driving it.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
+            <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
                 <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: 32, textAlign: 'center' }}>
                     <Label>Biological Age</Label>
                     <div style={{ position: 'relative', width: 160, height: 160 }}>
