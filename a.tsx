@@ -639,7 +639,7 @@ function DashboardHome(_props: { sliders: any, setSliders: any }) {
                 <div>
                     <p style={{ fontSize: 11, fontWeight: 600, color: F.ac, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 8px' }}>Dashboard</p>
                     <h2 style={{ fontSize: 38, fontWeight: 700, color: F.t1, margin: '0 0 6px', letterSpacing: '-0.04em', lineHeight: 1.1 }}>Good morning, Alex.</h2>
-                    <p style={{ fontSize: 14, color: F.t2, margin: 0, fontWeight: 400 }}>Thursday, July 16, 2026 · Your nervous system is primed for focus.</p>
+                    <p style={{ fontSize: 14, color: F.t2, margin: 0, fontWeight: 400 }}>Friday, July 17, 2026 · Your nervous system is primed for focus.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(48,209,88,0.07)', border: '1px solid rgba(48,209,88,0.15)', borderRadius: 20, padding: '8px 16px' }}>
                     <motion.span animate={{ opacity: [0.5, 1, 0.5], boxShadow: ['0 0 4px #30d158', '0 0 12px #30d158', '0 0 4px #30d158'] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 7, height: 7, borderRadius: '50%', background: '#30d158', display: 'inline-block' }} />
