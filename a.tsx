@@ -989,46 +989,163 @@ function WellnessTwinView({ sliders, setSliders }: { sliders: any, setSliders: a
     useEffect(() => {
         const canvas = canvasRef.current; if (!canvas) return;
         const ctx = canvas.getContext('2d'); if (!ctx) return;
-        canvas.width = 420; canvas.height = 440;
+        const W = 420, H = 440;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        ctx.scale(dpr, dpr);
+        const AC = F.ac || '#34d399';
+        const TXT = F.t1 || '#ffffff';
         let angle = 0, id: number;
-        interface N3 { x: number; y: number; z: number; name?: string; }
-        const sk: N3[] = [{ x: 0, y: -100, z: 0, name: "Neural" }, { x: 0, y: -60, z: 0 }, { x: 0, y: -20, z: 0, name: "Cardio" }, { x: 0, y: 20, z: 0 }, { x: 0, y: 60, z: 0, name: "Core" }, { x: -30, y: -50, z: 0 }, { x: -60, y: -30, z: 0, name: "Vigor" }, { x: 30, y: -50, z: 0 }, { x: 60, y: -30, z: 0, name: "Metabolic" }, { x: -20, y: 80, z: 0 }, { x: -40, y: 140, z: 0 }, { x: 20, y: 80, z: 0 }, { x: 40, y: 140, z: 0 }];
+        interface N3 { x: number; y: number; z: number; name?: string; head?: boolean }
+        const sk: N3[] = [
+            { x: 0, y: -122, z: 0, head: true, name: 'Neural' },
+            { x: 0, y: -96, z: 0 },
+            { x: 0, y: -64, z: 0, name: 'Cardio' },
+            { x: 0, y: -26, z: 0 },
+            { x: 0, y: 6, z: 0, name: 'Core' },
+            { x: -30, y: -86, z: 0 },
+            { x: -54, y: -52, z: 0 },
+            { x: -64, y: -14, z: 0, name: 'Metabolic' },
+            { x: 30, y: -86, z: 0 },
+            { x: 54, y: -52, z: 0 },
+            { x: 64, y: -14, z: 0, name: 'Vigor' },
+            { x: -17, y: 12, z: 0 },
+            { x: -23, y: 74, z: 0 },
+            { x: -27, y: 138, z: 0 },
+            { x: 17, y: 12, z: 0 },
+            { x: 23, y: 74, z: 0 },
+            { x: 27, y: 138, z: 0 },
+        ];
+        const edges: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [5, 6], [6, 7], [1, 8], [8, 9], [9, 10], [4, 11], [11, 12], [12, 13], [4, 14], [14, 15], [15, 16]];
+        const sparks = Array.from({ length: 24 }, () => ({ x: (Math.random() - 0.5) * 160, z: (Math.random() - 0.5) * 80, y: 160 - Math.random() * 320, s: Math.random() * 1.6 + 0.5, v: Math.random() * 0.35 + 0.12, o: Math.random() * 0.5 + 0.15 }));
         const draw = () => {
-            ctx.clearRect(0, 0, 400, 420); angle += 0.006;
-            const cx = 210, cy = 220;
-            const AC = F.ac || '#34d399'; ctx.strokeStyle = AC + '28'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.ellipse(cx, cy + 150, 70, 25, 0, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.ellipse(cx, cy + 150, 110, 40, 0, 0, Math.PI * 2); ctx.stroke();
+            const t = Date.now() / 1000;
+            ctx.clearRect(0, 0, W, H);
+            angle += 0.006;
+            const cx = W / 2, cy = H / 2 - 6, bob = Math.sin(t * 1.4) * 4;
+            const flick = 0.9 + Math.sin(t * 23) * 0.04 + Math.sin(t * 7.3) * 0.04;
+
+            // ambient halo behind figure
+            const halo = ctx.createRadialGradient(cx, cy - 20, 0, cx, cy - 20, 190);
+            halo.addColorStop(0, AC + '14'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
+
+            // ground: glow pool + rotating dashed rings
+            const gy = cy + 158;
+            ctx.save();
+            ctx.translate(cx, gy); ctx.scale(1, 0.3); ctx.translate(-cx, -gy);
+            const pool = ctx.createRadialGradient(cx, gy, 0, cx, gy, 100);
+            pool.addColorStop(0, AC + '2a'); pool.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = pool; ctx.beginPath(); ctx.arc(cx, gy, 100, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+            ([[96, 26, 0.45, -1], [64, 17, 0.3, 1.6], [118, 33, 0.18, 0.7]] as const).forEach(([rx, ry, opa, dir]) => {
+                ctx.save();
+                ctx.setLineDash([10, 8]);
+                ctx.lineDashOffset = t * 16 * dir;
+                ctx.globalAlpha = opa * flick;
+                ctx.strokeStyle = AC; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.ellipse(cx, gy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+            });
+
+            // rising particles (rotate with the figure)
+            sparks.forEach(p => {
+                p.y -= p.v;
+                if (p.y < -180) { p.y = 165; p.x = (Math.random() - 0.5) * 160; }
+                const cos = Math.cos(angle), sin = Math.sin(angle);
+                const rx = p.x * cos - p.z * sin, rz = p.x * sin + p.z * cos;
+                const pr = 300 / (300 + rz);
+                ctx.globalAlpha = p.o * (0.4 + 0.6 * pr) * flick;
+                ctx.fillStyle = AC;
+                ctx.beginPath(); ctx.arc(cx + rx * pr, cy + p.y * pr, p.s * pr, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // project skeleton
             const pn = sk.map(n => {
                 const cos = Math.cos(angle), sin = Math.sin(angle);
                 const rx = n.x * cos - n.z * sin, rz = n.x * sin + n.z * cos;
                 const p = 300 / (300 + rz);
-                return { px: cx + rx * p, py: cy + n.y * p, orig: n };
+                return { px: cx + rx * p, py: cy + (n.y + bob) * p, p, orig: n };
             });
-            ctx.strokeStyle = AC + '45'; ctx.lineWidth = 1.5;
-            const dl = (a: number, b: number) => { ctx.beginPath(); ctx.moveTo(pn[a].px, pn[a].py); ctx.lineTo(pn[b].px, pn[b].py); ctx.stroke(); };
-            dl(0, 1); dl(1, 2); dl(2, 3); dl(3, 4); dl(1, 5); dl(5, 6); dl(1, 7); dl(7, 8); dl(4, 9); dl(9, 10); dl(4, 11); dl(11, 12);
-            pn.forEach((n, i) => {
-                const r = Math.sin(Date.now() / 200 + i) * 2 + 5;
-                const outer = r * 8;
-                const g2 = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, outer);
-                g2.addColorStop(0, AC + '30'); g2.addColorStop(1, 'transparent');
-                ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(n.px, n.py, outer, 0, Math.PI * 2); ctx.fill();
-                const g = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, r);
-                g.addColorStop(0, AC + 'ff'); g.addColorStop(0.5, AC + 'cc'); g.addColorStop(1, AC + '00');
-                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.px, n.py, r, 0, Math.PI * 2); ctx.fill();
-                if (n.orig.name) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 10px monospace';
-                    ctx.shadowColor = AC; ctx.shadowBlur = 6;
-                    ctx.fillText(n.orig.name.toUpperCase(), n.px + 10, n.py + 4);
-                    ctx.shadowBlur = 0;
+
+            // limbs with traveling energy pulses
+            edges.forEach(([a, b], i) => {
+                const A = pn[a], B = pn[b];
+                ctx.globalAlpha = 0.45 * flick;
+                ctx.strokeStyle = AC; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(A.px, A.py); ctx.lineTo(B.px, B.py); ctx.stroke();
+                const ph = (t * 0.45 + i * 0.17) % 1;
+                const qx = A.px + (B.px - A.px) * ph, qy = A.py + (B.py - A.py) * ph;
+                ctx.globalAlpha = 0.85 * flick;
+                const pg = ctx.createRadialGradient(qx, qy, 0, qx, qy, 5);
+                pg.addColorStop(0, AC); pg.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(qx, qy, 5, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // joints — far ones first for depth
+            [...pn].sort((m, n) => m.p - n.p).forEach(n => {
+                const r = (n.orig.name ? 5 : 3.4) * n.p + Math.sin(t * 3 + n.px * 0.1) * 0.5;
+                const og = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, r * 6);
+                og.addColorStop(0, AC + '2e'); og.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = og; ctx.beginPath(); ctx.arc(n.px, n.py, r * 6, 0, Math.PI * 2); ctx.fill();
+                if (n.orig.head) {
+                    ctx.globalAlpha = 0.9 * flick;
+                    ctx.strokeStyle = AC; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(n.px, n.py - 9 * n.p, 13 * n.p, 0, Math.PI * 2); ctx.stroke();
+                    ctx.globalAlpha = 0.25 * flick;
+                    ctx.fillStyle = AC;
+                    ctx.beginPath(); ctx.arc(n.px, n.py - 9 * n.p, 13 * n.p, 0, Math.PI * 2); ctx.fill();
+                    ctx.globalAlpha = 1;
                 }
+                const g = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, r);
+                g.addColorStop(0, '#e8fff5'); g.addColorStop(0.45, AC); g.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.px, n.py, r, 0, Math.PI * 2); ctx.fill();
             });
+
+            // labels: leader line + pill, side depends on projected position
+            ctx.font = 'bold 10px ui-monospace, SFMono-Regular, monospace';
+            pn.forEach(n => {
+                if (!n.orig.name) return;
+                const label = n.orig.name.toUpperCase();
+                const tw = ctx.measureText(label).width;
+                const side = n.orig.head ? 1 : (n.px >= cx ? 1 : -1);
+                const ny = n.orig.head ? n.py - 18 : n.py;
+                ctx.globalAlpha = 0.5 * flick;
+                ctx.strokeStyle = AC; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(n.px + side * 7, ny); ctx.lineTo(n.px + side * 15, ny); ctx.stroke();
+                const bw = tw + 12, bh = 16;
+                const bx = side === 1 ? n.px + 17 : n.px - 17 - bw;
+                const by = ny - 8;
+                ctx.globalAlpha = 0.55;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.beginPath();
+                if ((ctx as any).roundRect) (ctx as any).roundRect(bx, by, bw, bh, 8); else ctx.rect(bx, by, bw, bh);
+                ctx.fill();
+                ctx.globalAlpha = 0.35 * flick;
+                ctx.strokeStyle = AC; ctx.stroke();
+                ctx.globalAlpha = 0.95 * flick;
+                ctx.fillStyle = TXT;
+                ctx.shadowColor = AC; ctx.shadowBlur = 8;
+                ctx.fillText(label, bx + 6, by + 11.5);
+                ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+            });
+
+            // scanline sweep
+            const sy = ((t * 42) % (H + 80)) - 40;
+            const sg = ctx.createLinearGradient(0, sy - 14, 0, sy + 14);
+            sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(0.5, AC + '22'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = sg; ctx.fillRect(0, sy - 14, W, 28);
+            ctx.globalAlpha = 0.35 * flick;
+            ctx.fillStyle = AC; ctx.fillRect(0, sy, W, 1);
+            ctx.globalAlpha = 1;
+
             id = requestAnimationFrame(draw);
         };
         draw();
         return () => cancelAnimationFrame(id);
-    }, [F.ac]);
+    }, [F.ac, F.t1]);
     const sliderDefs = [
         { key: 'sleep', label: 'Daily Rest', unit: 'hrs', min: 4, max: 12, step: 0.1 },
         { key: 'exercise', label: 'Athletic Load', unit: 'min', min: 0, max: 180, step: 5 },
@@ -1045,7 +1162,7 @@ function WellnessTwinView({ sliders, setSliders }: { sliders: any, setSliders: a
             <div className="g-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                 <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 480, position: 'relative' }}>
                     <div style={{ position: 'absolute', top: 16, left: 16, fontSize: 10, color: F.t2, background: F.s2, border: `1px solid ${F.b}`, borderRadius: 20, padding: '4px 12px', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>Active Spatial View</div>
-                    <canvas ref={canvasRef} style={{ maxWidth: '100%', height: 'auto' }} />
+                    <canvas ref={canvasRef} style={{ width: '100%', maxWidth: 420, height: 'auto' }} />
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: F.t2, fontFamily: 'monospace', padding: '0 8px' }}>
                         <span>AZIMUTH: ROTATING</span><span>84.1 Hz</span>
                     </div>
