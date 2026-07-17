@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Brain, Flame, Heart, Moon, Compass, Calendar,
-    Settings, Sparkles, Sliders, Battery, Smile, User, Search, Bell,
+    Settings, Sparkles, Sliders, Battery, User, Search, Bell,
     ChevronRight, CheckCircle, RefreshCw, Play, BookOpen, Send,
     Mic, Image as ImageIcon, Link2, LogIn, Sun, Moon as MoonIcon
 } from 'lucide-react';
@@ -14,7 +14,7 @@ const lightT = { bg: '#ffffff', s1: '#f5f5f7', s2: '#ebebf0', b: '#d2d2d7', t1: 
 
 export default function AuraTwin() {
     const [tab, setTab] = useState<'dashboard' | 'twin' | 'timeline' | 'mood' | 'journal' | 'sleep' | 'wearables' | 'landing' | 'peaks' | 'cascade' | 'bioage'>('landing');
-    const [search, setSearch] = useState('');
+
     const [cmdOpen, setCmdOpen] = useState(false);
     const [notifs] = useState([
         { id: 1, text: "Burnout Risk low — rest not required tonight.", type: 'success' },
