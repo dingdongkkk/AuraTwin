@@ -13,7 +13,7 @@ const darkT = { bg: '#000', s1: '#141414', s2: '#1c1c1e', b: '#2a2a2a', t1: '#ff
 const lightT = { bg: '#ffffff', s1: '#f5f5f7', s2: '#ebebf0', b: '#d2d2d7', t1: '#1d1d1f', t2: '#6e6e73', t3: '#8e8e93', t4: '#aeaeb2', ac: '#059669', acDim: 'rgba(5,150,105,0.08)', sidebar: '#f5f5f7', sbBorder: '#e5e5ea', cardGrad: 'linear-gradient(145deg,#ffffff,#fafafa)', header: 'rgba(255,255,255,0.9)', track: '#e5e5ea', toggleOff: '#d2d2d7', thumbOn: '#fff', thumbOff: '#8e8e93' };
 
 export default function AuraTwin() {
-    const [tab, setTab] = useState<'dashboard' | 'twin' | 'timeline' | 'mood' | 'journal' | 'sleep' | 'wearables' | 'landing' | 'peaks' | 'cascade' | 'bioage'>('dashboard');
+    const [tab, setTab] = useState<'dashboard' | 'twin' | 'timeline' | 'mood' | 'journal' | 'sleep' | 'wearables' | 'landing' | 'peaks' | 'cascade' | 'bioage'>('landing');
     const [search, setSearch] = useState('');
     const [cmdOpen, setCmdOpen] = useState(false);
     const [notifs] = useState([
